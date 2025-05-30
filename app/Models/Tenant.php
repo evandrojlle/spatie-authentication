@@ -37,6 +37,7 @@ class Tenant extends TenantModel
         return [
             'created_at' => 'datetime:Y-m-d H:i:s',
             'updated_at' => 'datetime:Y-m-d H:i:s',
+            'deleted_at' => 'datetime:Y-m-d H:i:s',
             'status' => 'boolean',
         ];
     }
