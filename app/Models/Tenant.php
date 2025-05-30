@@ -26,4 +26,18 @@ class Tenant extends TenantModel
         'status',
         'domain', // Adicione o campo para identificar o tenant pelo domínio
     ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'created_at' => 'datetime:Y-m-d H:i:s',
+            'updated_at' => 'datetime:Y-m-d H:i:s',
+            'status' => 'boolean',
+        ];
+    }
 }
