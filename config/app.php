@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Application Name
@@ -12,7 +11,6 @@ return [
     | other UI elements where an application name needs to be displayed.
     |
     */
-
     'name' => env('APP_NAME', 'Laravel'),
 
     /*
@@ -25,7 +23,6 @@ return [
     | services the application utilizes. Set this in your ".env" file.
     |
     */
-
     'env' => env('APP_ENV', 'production'),
 
     /*
@@ -38,7 +35,6 @@ return [
     | application. If disabled, a simple generic error page is shown.
     |
     */
-
     'debug' => (bool) env('APP_DEBUG', false),
 
     /*
@@ -51,7 +47,6 @@ return [
     | the application so that it's available within Artisan commands.
     |
     */
-
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
@@ -64,7 +59,6 @@ return [
     | is set to "UTC" by default as it is suitable for most use cases.
     |
     */
-
     'timezone' => env('APP_TIMEZONE', 'UTC'),
 
     /*
@@ -77,7 +71,6 @@ return [
     | set to any locale for which you plan to have translation strings.
     |
     */
-
     'locale' => env('APP_LOCALE', 'en'),
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
@@ -94,7 +87,6 @@ return [
     | are secure. You should do this prior to deploying the application.
     |
     */
-
     'cipher' => 'AES-256-CBC',
 
     'key' => env('APP_KEY'),
@@ -117,7 +109,6 @@ return [
     | Supported drivers: "file", "cache"
     |
     */
-
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
