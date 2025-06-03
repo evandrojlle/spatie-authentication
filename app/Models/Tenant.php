@@ -41,4 +41,43 @@ class Tenant extends TenantModel
             'status' => 'boolean',
         ];
     }
+
+    public function getDatabaseName(): string
+    {
+        if ($this->tenantDatabaseConnectionName() !== $this->database) {
+            config(
+                [
+                    "multitenancy.tenant_database_connection_name" => $this->database,
+                ]
+            );
+        }
+
+        return $this->tenantDatabaseConnectionName();
+    }
+
+    public function getDomainAttribute($value)
+    {
+        return strtolower($value); // Garante que o domínio seja sempre armazenado em minúsculas
+    }
+
+    public function setDomainAttribute($value)
+    {
+        $this->attributes['domain'] = strtolower($value); // Garante que o domínio seja sempre armazenado em minúsculas
+    }
+
+    /**
+     * Find a tenant by its domain.
+     *
+     * @param string $domain
+     * @return Tenant|null
+     */
+    public static function findByDomain(string $domain)
+    {
+        return static::where('domain', $domain)->first();
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status ? true : false; // Verifica se o status do tenant é ativo (true)
+    }
 }
