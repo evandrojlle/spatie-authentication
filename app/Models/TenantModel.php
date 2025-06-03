@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Spatie\Multitenancy\Concerns\UsesMultitenancyConfig;
 use Spatie\Multitenancy\Models\Concerns\UsesTenantConnection;
 use Spatie\Multitenancy\Models\Tenant as Model;
 
 class TenantModel extends Model
 {
-    use HasFactory, SoftDeletes, UsesTenantConnection;
+    use HasFactory, SoftDeletes, UsesTenantConnection, UsesMultitenancyConfig;
 
     public static $perpage = 25;
 
