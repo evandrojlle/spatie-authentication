@@ -55,8 +55,8 @@ return [
     'default_main_domain' => env('APP_URL', 'http://localhost'),
 
     'database' => [
-        'central_connection' => env('DB_CONNECTION', 'sqlite'),
-        'connection' => env('TENANT_CONNECTION', 'tenant'),
+        'central_connection' => env('DB_CONNECTION'),
+        'connection' => env('TENANT_CONNECTION'),
         'prefix' => 'tenant',
         'suffix' => '',
     ],
@@ -75,12 +75,12 @@ return [
      *
      * Set to `null` to use the default connection.
      */
-    'tenant_database_connection_name' => null,
+    'tenant_database_connection_name' => env('TENANT_CONNECTION', 'tenant'),
 
     /*
      * The connection name to reach the landlord database.
      */
-    'landlord_database_connection_name' => null,
+    'landlord_database_connection_name' => env('DB_CONNECTION', 'sqlite'),
 
     /*
      * This key will be used to associate the current tenant in the context
