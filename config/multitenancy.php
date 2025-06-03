@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Tenant;
 use Illuminate\Broadcasting\BroadcastEvent;
 use Illuminate\Events\CallQueuedListener;
 use Illuminate\Mail\SendQueuedMailable;
@@ -9,7 +10,11 @@ use Spatie\Multitenancy\Actions\ForgetCurrentTenantAction;
 use Spatie\Multitenancy\Actions\MakeQueueTenantAwareAction;
 use Spatie\Multitenancy\Actions\MakeTenantCurrentAction;
 use Spatie\Multitenancy\Actions\MigrateTenantAction;
-use Spatie\Multitenancy\Models\Tenant;
+use Spatie\Multitenancy\Models\Tenant as BaseTenant;
+use Spatie\Multitenancy\Tasks\PrefixCacheTask;
+use Spatie\Multitenancy\Tasks\SwitchRouteCacheTask;
+use Spatie\Multitenancy\Tasks\SwitchTenantDatabaseTask;
+use Spatie\Multitenancy\TenantFinder\DomainTenantFinder;
 
 return [
     /*
@@ -19,7 +24,7 @@ return [
      * This class should extend `Spatie\Multitenancy\TenantFinder\TenantFinder`
      *
      */
-    'tenant_finder' => Spatie\Multitenancy\TenantFinder\DomainTenantFinder::class,
+    'tenant_finder' => DomainTenantFinder::class,
 
     /*
      * These fields are used by tenant:artisan command to match one or more tenant.
@@ -34,9 +39,9 @@ return [
      * A valid task is any class that implements Spatie\Multitenancy\Tasks\SwitchTenantTask
      */
     'switch_tenant_tasks' => [
-        // \Spatie\Multitenancy\Tasks\PrefixCacheTask::class,
-        \Spatie\Multitenancy\Tasks\SwitchTenantDatabaseTask::class,
-        // \Spatie\Multitenancy\Tasks\SwitchRouteCacheTask::class,
+        // PrefixCacheTask::class,
+        SwitchTenantDatabaseTask::class,
+        // SwitchRouteCacheTask::class,
     ],
 
     /*
@@ -45,7 +50,18 @@ return [
      * It must  extend `Spatie\Multitenancy\Models\Tenant::class` or
      * implement `Spatie\Multitenancy\Contracts\IsTenant::class` interface
      */
-    'tenant_model' => \App\Models\Tenant::class,
+    'tenant_model' => Tenant::class,
+
+    'default_main_domain' => env('APP_URL', 'http://localhost'),
+
+    'database' => [
+        'central_connection' => env('DB_CONNECTION', 'sqlite'),
+        'connection' => env('TENANT_CONNECTION', 'tenant'),
+        'prefix' => 'tenant',
+        'suffix' => '',
+    ],
+
+    'switch_tenant_by_domain' => true,
 
     /*
      * If there is a current tenant when dispatching a job, the id of the current tenant
