@@ -21,14 +21,20 @@ class IdentifyTenant
 
         // Se a empresa não for encontrada, você pode lidar com isso adequadamente, por exemplo, lançar uma exceção ou retornar uma resposta.
         // Exemplo: Se você quiser abortar com um 404 se a empresa não for encontrado.
-        if (!Tenant::current()) {
-            abort(404, __('Tenant not found'));
+        $currentTenant = Tenant::current();
+
+        if (! $currentTenant) {
+            return response()->json(
+                [
+                    'error' => __('Tenant not found')
+                ], 401
+            );
         }
 
         // Se a empresa for encontrada, ela será definida como a empresa atual para a request.
         // Você também pode registrar a identificação da empresa ou executar qualquer outra ação necessária aqui.
         // Opcionalmente, você pode registrar a identificação do inquilino
-        Log::info(__('Tenant identified'), ['tenant_id' => Tenant::current()->id]);
+        Log::info(__('Tenant identified'), ['tenant_id' => $currentTenant->id]);
 
         // Continuar com a request.
         // A empresa agora é identificada e definida como a empresa atual para a request.
@@ -39,7 +45,7 @@ class IdentifyTenant
         // Por exemplo, você pode verificar se a empresa está ativa ou realizar qualquer outra validação.
         // Se precisar executar alguma ação ou verificação adicional, você pode fazê-lo aqui.
         // Exemplo: Verificar se a empresa está ativa
-        if (!Tenant::current()->isActive()) {
+        if (! $currentTenant->isActive()) {
             abort(403, __('Tenant is not active'));
         }
 
