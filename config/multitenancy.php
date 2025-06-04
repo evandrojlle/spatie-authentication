@@ -75,12 +75,12 @@ return [
      *
      * Set to `null` to use the default connection.
      */
-    'tenant_database_connection_name' => env('TENANT_CONNECTION', 'tenant'),
+    'tenant_database_connection_name' => env('TENANT_CONNECTION'),
 
     /*
      * The connection name to reach the landlord database.
      */
-    'landlord_database_connection_name' => env('DB_CONNECTION', 'sqlite'),
+    'landlord_database_connection_name' => env('DB_CONNECTION'),
 
     /*
      * This key will be used to associate the current tenant in the context
