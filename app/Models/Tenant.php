@@ -44,15 +44,10 @@ class Tenant extends TenantModel
 
     public function getDatabaseName(): string
     {
-        if ($this->tenantDatabaseConnectionName() !== $this->database) {
-            config(
-                [
-                    "multitenancy.tenant_database_connection_name" => $this->database,
-                ]
-            );
-        }
+        $tenant = env('TENANT_CONNECTION');
+        $config = "database.connections.{$tenant}.database";
 
-        return $this->tenantDatabaseConnectionName();
+        return config($config);
     }
 
     public function getDomainAttribute($value)
