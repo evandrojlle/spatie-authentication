@@ -3,19 +3,28 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
+        try {
+            $credentials = $request->only('email', 'password');
+            if (! $token = JWTAuth::attempt(['email' => $credentials['email'], 'password' => $credentials['password']])) {
+                return response()->json(['error' => 'Credenciais inválidas'], 401);
+            }
+    
+            return response()->json(['token' => $token]);
+        } catch (\Exception $e) {
+            Log::error('Erro ao tentar autenticar', [
+                'error' => $e->getMessage(),
+                'credentials' => $request->only('email')
+            ]);
 
-        if (! $token = JWTAuth::attempt(['email' => $credentials['email'], 'password' => $credentials['password']])) {
-            return response()->json(['error' => 'Credenciais inválidas'], 401);
+            return response()->json(['error' => 'Erro ao tentar autenticar'], 500);
         }
-
-        return response()->json(['token' => $token]);
     }
 
     public function logout()
