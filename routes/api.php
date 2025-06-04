@@ -17,5 +17,13 @@ Route::prefix('auth')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('/tenant-resource', [TenantResourceController::class, 'index']);
         Route::get('me', [AuthController::class, 'me']);
+
+        Route::get('/admin-resource', function () {
+            return response()->json(['message' => 'Recurso protegido para administradores']);
+        })->middleware('role:admin');
+
+        Route::get('/user-resource', function () {
+            return response()->json(['message' => 'Recurso protegido para usuários']);
+        })->middleware('role:user');
     });
 });

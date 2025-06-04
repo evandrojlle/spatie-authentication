@@ -17,6 +17,7 @@
         "pusher/pusher-php-server": "^7.2",
         "spatie/laravel-ignition": "^2.9",
         "spatie/laravel-multitenancy": "^4.0",
+        "spatie/laravel-permission": "^6.19",
         "tymon/jwt-auth": "^2.2"
     },
     "require-dev": {
@@ -81,6 +82,21 @@
         "dev": [
             "Composer\\Config::disableProcessTimeout",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite"
+        ],
+        "cache-clear": [
+            "@php artisan cache:clear --ansi",
+            "@php artisan config:clear --ansi",
+            "@php artisan route:clear --ansi",
+            "@php artisan view:clear --ansi"
+        ],
+        "migrate-tenant": [
+            "@php artisan migrate --database=tenant --force --ansi"
+        ],
+        "migrate-main": [
+            "@php artisan migrate --database=sqlite --force --ansi"
+        ],
+        "tenants": [
+            "@php artisan tenants:artisan \"migrate --database=tenant --force --ansi\""
         ]
     },
     "extra": {
