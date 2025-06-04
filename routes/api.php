@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\TenantResourceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -11,6 +12,10 @@ Route::get('/user', function (Request $request) {
  */
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
-    Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:api');
-    Route::get('me', [AuthController::class, 'me'])->middleware('auth:api');
+
+    Route::middleware(['auth.jwt', 'IdentifyTenant'])->group(function () {
+        Route::post('logout', [AuthController::class, 'logout']);
+        Route::get('/tenant-resource', [TenantResourceController::class, 'index']);
+        Route::get('me', [AuthController::class, 'me']);
+    });
 });

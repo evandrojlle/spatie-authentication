@@ -22,7 +22,6 @@ class IdentifyTenant
         // Se a empresa não for encontrada, você pode lidar com isso adequadamente, por exemplo, lançar uma exceção ou retornar uma resposta.
         // Exemplo: Se você quiser abortar com um 404 se a empresa não for encontrado.
         $currentTenant = Tenant::current();
-
         if (! $currentTenant) {
             return response()->json(
                 [
