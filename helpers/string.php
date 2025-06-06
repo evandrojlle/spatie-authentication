@@ -389,3 +389,38 @@ if ( ! function_exists('is_json')) {
         return $preg ? true : false;
     }
 }
+
+/**
+ * Adiciona a mascara do Telefone.
+ *
+ * @param string $pString
+ * @return void
+ */
+if (! function_exists('format_phone')) {
+    function format_phone(string $pPhone): string
+    {
+        $length = strlen($pPhone);
+        if ($length > 12) {
+            return preg_replace("/(\d{2,3})(\d{2})(\d{5})(\d{4})/", "+\$1 (\$2) \$3-\$4", $pPhone);
+        } else if ($length === 11) {
+            return preg_replace("/(\d{2})(\d{5})(\d{4})/", "(\$1) \$2-\$3", $pPhone);
+        } 
+
+        return preg_replace("/(\d{2})(\d{4})(\d{4})/", "(\$1) \$2-\$3", $pPhone); 
+    }
+}
+
+/**
+ * Remove a mascara do Telefone.
+ *
+ * @param string $pString
+ * @return void
+ */
+if (! function_exists('unformat_phone')) {
+    function unformat_phone(string $pPhone): string
+    {
+        $pPhone = preg_replace('/\D/', '', $pPhone);
+
+        return $pPhone;
+    }
+}
