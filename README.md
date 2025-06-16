@@ -1216,6 +1216,168 @@ Route::middleware(['auth.jwt', 'identify.tenant'])->group(function () {
 
 Com isso, você terá configurado a autorização baseada em papéis em um sistema Laravel Multi-Tenancy com autenticação JWT.
 
+## Atribuir permissões específicas a diferentes papéis de usuários
+
+Como posso atribuir permissões específicas a diferentes papéis de usuário em um sistema Laravel Multi-Tenancy com autenticação JWT?
+
+### Para atribuir permissões específicas a diferentes papéis de usuário em um sistema Laravel Multi-Tenancy com autenticação JWT, siga os passos abaixo:
+
+1. Instalar Pacote de Controle de Papéis e Permissões
+
+Certifique-se de que o pacote `spatie/laravel-permission` está instalado e configurado. Caso ainda não tenha feito isso, instale o pacote:
+
+```shell
+composer require spatie/laravel-permission
+```
+
+Publique o arquivo de configuração e migre as tabelas:
+
+```shell
+php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+php artisan migrate
+```
+
+2. Configurar o Modelo de Usuário.
+
+Adicione o trait `HasRoles` ao modelo de usuário para habilitar o gerenciamento de papéis e permissões:
+
+```php
+<?php
+namespace App\Models;
+
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Tymon\JWTAuth\Contracts\JWTSubject;
+use Spatie\Permission\Traits\HasRoles;
+
+class Usuario extends Authenticatable implements JWTSubject
+{
+    use HasRoles;
+
+    protected $fillable = ['nome', 'email', 'senha'];
+
+    protected $hidden = ['senha'];
+
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }
+}
+```
+
+3. Criar Papéis e Permissões.
+
+Você pode criar papéis e permissões diretamente no código ou usando seeders. Por exemplo: Usando o `AppServiceProvider`:
+
+```php
+<?php
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+
+public function boot()
+{
+    // Criar permissões
+    Permission::create(['name' => 'manage tenants']);
+    Permission::create(['name' => 'view resources']);
+    Permission::create(['name' => 'edit resources']);
+
+    // Criar papéis
+    $adminRole = Role::create(['name' => 'admin']);
+    $userRole = Role::create(['name' => 'user']);
+
+    // Atribuir permissões aos papéis
+    $adminRole->givePermissionTo(['manage tenants', 'view resources', 'edit resources']);
+    $userRole->givePermissionTo(['view resources']);
+}
+```
+
+Usando Seeders:
+
+Crie um seeder para gerenciar papéis e permissões:
+
+```shell
+php artisan make:seeder RolesAndPermissionsSeeder
+```
+
+No arquivo gerado (`database/seeders/RolesAndPermissionsSeeder.php`), configure os papéis e permissões:
+
+```php
+?php
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+
+class RolesAndPermissionsSeeder extends Seeder
+{
+    public function run()
+    {
+        // Criar permissões
+        Permission::create(['name' => 'manage tenants']);
+        Permission::create(['name' => 'view resources']);
+        Permission::create(['name' => 'edit resources']);
+
+        // Criar papéis
+        $adminRole = Role::create(['name' => 'admin']);
+        $userRole = Role::create(['name' => 'user']);
+
+        // Atribuir permissões aos papéis
+        $adminRole->givePermissionTo(['manage tenants', 'view resources', 'edit resources']);
+        $userRole->givePermissionTo(['view resources']);
+    }
+}
+```
+
+Execute o seeder:
+
+```shell
+php artisan db:seed --class=RolesAndPermissionsSeeder
+```
+
+4. Atribuir Papéis a Usuários
+
+Você pode atribuir papéis a usuários diretamente no código ou via seeder. Por exemplo:
+
+```php
+<?php
+use App\Models\Usuario;
+
+$user = Usuario::find(1); // Encontre o usuário
+$user->assignRole('admin'); // Atribuir papel de administrador
+```
+
+5. Proteger Rotas com Permissões
+Use o middleware permission fornecido pelo pacote para proteger rotas específicas com base em permissões:
+
+```php
+<?php
+use App\Http\Controllers\SomeController;
+
+Route::middleware(['auth.jwt', 'identify.tenant'])->group(function () {
+    Route::get('/manage-tenants', [SomeController::class, 'manageTenants'])
+        ->middleware('permission:manage tenants');
+
+    Route::get('/view-resources', [SomeController::class, 'viewResources'])
+        ->middleware('permission:view resources');
+
+    Route::post('/edit-resources', [SomeController::class, 'editResources'])
+        ->middleware('permission:edit resources');
+});
+```
+
+6. Testar
+
+1. Atribuir Papéis e Permissões: Certifique-se de que os usuários têm os papéis e permissões corretos.
+2. Acesso Protegido: Teste as rotas protegidas com diferentes usuários e permissões.
+3. Verificar Tenant: Certifique-se de que o tenant correto está sendo identificado.
+
+Com isso, você terá configurado permissões específicas para diferentes papéis em um sistema Laravel Multi-Tenancy com autenticação JWT.
+
 
 ```
 ```
