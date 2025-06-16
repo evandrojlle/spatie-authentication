@@ -875,10 +875,10 @@ Route::get('/me', [AuthController::class, 'me'])->middleware(['auth.jwt', 'Ident
 ```
 
 8. Testar
-1. Crie usuários no banco de dados.
-2. Configure tenants com diferentes domínios.
-3. Faça login para gerar o token JWT.
-4. Use o token JWT para acessar rotas protegidas e verificar se o tenant correto está sendo identificado.
+    1. Crie usuários no banco de dados.
+    2. Configure tenants com diferentes domínios.
+    3. Faça login para gerar o token JWT.
+    4. Use o token JWT para acessar rotas protegidas e verificar se o tenant correto está sendo identificado.
 
 Com isso, você terá configurado a geração de tokens JWT para autenticação em um sistema Laravel Multi-Tenancy.
 
@@ -1060,6 +1060,329 @@ Route::middleware(['auth.jwt', 'identify.tenant'])->group(function () {
 3. Verificar Tenant: Certifique-se de que o tenant correto está sendo identificado com base no domínio ou outro identificador.
 
 Com isso, suas rotas específicas estarão protegidas por autenticação JWT e vinculadas ao tenant correto no sistema Laravel Multi-Tenancy.
+
+## Registro de Usuário.
+
+Como posso criar um usuário para autenticação em um sistema Laravel Multi-Tenancy com autenticação JWT?
+
+### Para criar um usuário para autenticação em um sistema Laravel Multi-Tenancy com autenticação JWT, siga os passos abaixo:
+
+1. Crie a migration para adicionar os novos campos à tabela de usuários:
+```shell
+    php artisan make:migration AddColumnsAtToUsersTable
+```
+
+com isso será criado um arquivo como `ano_mes_dia_horaminutosegundo_add_columns_at_to_users_table.php`
+
+2. Adicione ao arquivo o conteúdo abaixo:
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('cpf', 15)->nullable(false)->after('name')->unique();
+            $table->string('phone', 20)->nullable(false)->after('cpf');
+            $table->tinyInteger('status')->nullable(false)->default(1); // 1 = Ativo, 0 = Inativo
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn(['cpf', 'phone', 'status']); // Remove as colunas adicionadas
+        });
+    }
+};
+```
+
+3. Execute a migration:
+
+```shell
+    php artisan migrate --path=database/migration/ano_mes_dia_horaminutosegundo_add_columns_at_to_users_table.php
+```
+
+4. Crie uma controller para criar a funcionalidade de registro de usuário:
+
+```shell
+php artisan make:controller RegisterController
+```
+
+Na controlle, implemente a lógica de registro de usuário:
+
+```php
+<?php
+namespace App\Http\Controllers;
+
+use App\Models\Usuario;
+use App\Traits\Log;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+
+class RegisterController extends Controller
+{
+    use Log;
+
+    /**
+     * Get a validator for an incoming registration request.
+     *
+     * @param  array $data
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
+    protected function validator(array $data)
+    {
+        $rules = [
+            'name' => 'required|string|max:255',
+            'cpf' => 'required|string|max:14|unique:users', // CPF validation with mask
+            'email' => 'required|string|email|max:255|unique:users',
+            'phone' => 'required|string|max:20', // Phone validation
+            'password' => 'required|string|min:8|confirmed',
+        ];
+
+        $messages = [
+            'name.required' => __('O campo nome é obrigatório.'),
+            'cpf.required' => __('O campo CPF é obrigatório.'),
+            'cpf.unique' => __('Já existe um usuário registrado com este CPF.'),
+            'email.required' => __('O campo email é obrigatório.'),
+            'email.email' => __('O campo email deve ser um endereço de email válido.'),
+            'email.unique' => __('Já existe um usuário registrado com este email.'),
+            'phone.required' => __('O campo telefone é obrigatório.'),
+            'password.required' => __('O campo senha é obrigatório.'),
+            'password.min' => __('A senha deve ter pelo menos 8 caracteres.'),
+            'password.confirmed' => __('As senhas não conferem.'),
+        ];
+
+        return Validator::make($data, $rules, $messages);
+    }
+
+    /**
+     * Create a new user instance after a valid registration.
+     *
+     * @param  Request $request
+     * @return \App\Models\Users
+     */
+    public function create(Request $request)
+    {
+        try {
+            $response = [
+                'success' => false,
+                'data' => [],
+                'messages' => []
+            ];
+            $data = array_map('trim', $request->all());
+            $validator = $this->validator($data);
+            if ($validator->fails()) {
+                foreach ($validator->errors()->getMessages() as $message) {
+                    $response['messages'] = [
+                        'message' => $message[0],
+                    ];
+                }
+
+                return response()->json($response, 422);
+            }
+    
+            $isRegistered = Usuario::isRegistered($data['cpf']);
+            if ($isRegistered) {
+                $response['messages'] = [
+                    'message' => __('Já existe um usuário registrado com este CPF. Faça login para continuar.'),
+                ];
+
+                return response()->json($response, 200);
+            }
+    
+            $user = new Usuario();
+            foreach ($data as $column => $value) {
+                if ($column !== 'password_confirmation') {
+                    $user->{$column} = $value;
+                }
+            }
+    
+            $user->email_verified_at = null;
+            $user->remember_token = null;
+            $user->status = 'ativo'; // Default status
+            $user->created_at = Carbon::now();
+            $user->updated_at = null;
+            $user->deleted_at = null;
+            $user->save();
+            if (! $user->id) {
+                $response['messages'] = [
+                    'message' => __('Ocorreu um erro ao salvar o usuário.'),
+                ];
+
+                return response()->json($response, 200);
+            }
+
+            $response = [
+                'success' => true,
+                'data' => ['id' => $user->id],
+                'messages' => ['message' => __('Usuário registrado com sucesso.')],
+            ];
+
+            return response()->json($response, 200);
+        } catch (\Exception $e) {
+            Log::save('error', $e);
+
+            $response['messages'] = [
+                'message' => __('Ops! Ocorreu um erro ao executar esta ação.'),
+            ];
+
+            return response()->json($response, 200);
+        }
+    }
+}
+```
+
+5. Adiciona na model Usuário a função `isRegistered` para verificar se o usuário ja foi registrado
+
+```php
+
+<?php
+namespace App\Models;
+
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Tymon\JWTAuth\Contracts\JWTSubject;
+
+class Usuario extends Authenticatable implements JWTSubject
+{
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
+    protected $fillable = [
+        'name',
+        'email',
+        'email_verified_at',
+        'cpf',
+        'phone',
+        'password',
+        'status',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'created_at' => 'datetime:Y-m-d H:i:s',
+            'updated_at' => 'datetime:Y-m-d H:i:s',
+            'deleted_at' => 'datetime:Y-m-d H:i:s',
+            'cpf' => 'App\Casts\CpfMask', // Cast CPF with mask
+            'phone' => 'App\Casts\PhoneMask', // Cast phone with mask
+        ];
+    }
+
+    public function scopeFilters(Builder $pQuery, array $pFilters = [], array $pLiked = []): void
+    {
+        foreach ($pFilters as $key => $value) {
+            $compareSignal = in_array($key, $pLiked) ? 'LIKE' : '=';
+            $value = (in_array($key, $pLiked)) ? "%{$value}%" : $value;
+            $table = (str_contains($key, '.')) ? $key : ((isset($this->table) && ! empty($this->table)) ? "{$this->table}.{$key}" : $key);
+            $pQuery->where($table, $compareSignal, $value);
+        }
+    }
+
+    public static function isRegistered(string $pDoc, ?int $id = null): bool
+    {
+        $query = self::query()->filters(['cpf' => $pDoc]);
+        if (null !== $id) {
+            $query->where('id', '!=', $id);
+        }
+
+        $fetchRow = $query->first();
+
+        return (! $fetchRow) ? false : true;
+    }
+
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }
+}
+
+```
+
+6. Agora só falta criar a rota para a criação do usuário. Adicione as rotas de autenticação no arquivo routes/api.php:
+
+```php
+<?php
+use App\Http\Controllers\AuthController;
+
+Route::post('register', [RegisterController::class, 'create']);
+```
+
+7. Testar
+    1. Abra o client de requisições de API como Postman. Insomnia ou outro de sua preferência.
+    2. Configure a url da requisição como.
+    ```
+    http://localhost:8000/api/auth/register
+    ```
+
+    3. Adicione o cabeçalho (header) da requisição
+    ```
+    Accept:application/json
+    Content-Type:application/json
+    ```
+
+    4. No corpo (body) da requisição adicione as informações do usuário no formato json:
+    ```json
+    {
+        "name": "Adele Vance",
+        "cpf": "479.222.980-49",
+        "email": "adele.vence@gmail.com",
+        "phone": "(11) 99876-5432",
+        "password": "Abc@1234",
+        "password_confirmation": "Abc@1234"
+    }
+    ```
+
+    5. Executando através do método POST, a resposta da requisição deverá ser:
+    ```json
+    {
+        "success": true,
+        "data": {
+            "id": 4
+        },
+        "messages": {
+            "message": "Usuário registrado com sucesso."
+        }
+    }
+    ```
+
+Com isso, você terá criado um usuário para um sistema Laravel Multi-Tenancy com autenticação JWT.
 
 ## Autorização de acesso baseada em papéis.
 
@@ -1378,11 +1701,100 @@ Route::middleware(['auth.jwt', 'identify.tenant'])->group(function () {
 
 Com isso, você terá configurado permissões específicas para diferentes papéis em um sistema Laravel Multi-Tenancy com autenticação JWT.
 
+## Verificar se o usuário possui determinada permissão
+
+Como posso verificar se um usuário possui uma determinada permissão em um sistema Laravel Multi-Tenancy com autenticação JWT?
+
+### Para verificar se um usuário possui uma determinada permissão em um sistema Laravel Multi-Tenancy com autenticação JWT, você pode usar os métodos fornecidos pelo pacote `spatie/laravel-permission`. Aqui está o passo a passo:
+
+1. Certifique-se de que o Trait `HasRoles` Está no Modelo de Usuário
+O modelo de usuário deve usar o trait `HasRoles` para habilitar o gerenciamento de papéis e permissões:
+
+```php
+<?php
+namespace App\Models;
+
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Tymon\JWTAuth\Contracts\JWTSubject;
+use Spatie\Permission\Traits\HasRoles;
+
+class Usuario extends Authenticatable implements JWTSubject
+{
+    use HasRoles;
+
+    protected $fillable = ['nome', 'email', 'senha'];
+
+    protected $hidden = ['senha'];
+
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }
+}
+```
+
+2. Verificar Permissão no Código
+Você pode verificar se o usuário autenticado possui uma permissão específica usando o método `hasPermissionTo()` ou `can()`.
+
+Exemplo com `hasPermissionTo()`:
+
+```php
+?php
+use Illuminate\Support\Facades\Auth;
+
+$user = Auth::user(); // Obter o usuário autenticado
+
+if ($user->hasPermissionTo('manage tenants')) {
+    return response()->json(['message' => 'Usuário tem permissão para gerenciar tenants.']);
+} else {
+    return response()->json(['message' => 'Usuário não tem permissão para gerenciar tenants.'], 403);
+}
+```
+
+Mais um Exemplo:
+
+```php
+<?php
+use Illuminate\Support\Facades\Auth;
+
+// Obtenha o usuário autenticado
+$user = Auth::user();
+
+// Verifique se o usuário possui a permissão "create-posts"
+if ($user->hasPermissionTo('create-posts')) {
+    return response()->json(['message' => 'O usuário possui a permissão de criar posts.']);
+} else {
+    return response()->json(['message' => 'O usuário não possui a permissão de criar posts.']);
+}
+```
+
+Explicação:
+
+1. `Auth::user()`: Obtém o usuário autenticado.
+2. `hasPermissionTo('nome_da_permissao')`: Verifica se o usuário possui a permissão especificada.
 
 ```
 ```
+
 ```
 ```
+
 ```
+```
+
+```
+```
+
+```
+```
+
+```
+```
+
 ```
 ```
