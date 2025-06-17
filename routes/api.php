@@ -15,7 +15,7 @@ Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [RegisterController::class, 'create']);
 
-    Route::middleware(['auth.jwt', 'IdentifyTenant'])->group(function () {
+    Route::middleware(['auth.jwt', 'App\Http\Middleware\IdentifyTenant'])->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('/tenant-resource', [TenantResourceController::class, 'index']);
         Route::get('me', [AuthController::class, 'me']);
