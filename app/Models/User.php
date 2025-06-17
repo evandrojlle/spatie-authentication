@@ -38,6 +38,7 @@ class User extends Authenticatable implements JWTSubject
     protected $hidden = [
         'password',
         'remember_token',
+        'deleted_at'
     ];
 
     /**
@@ -50,8 +51,8 @@ class User extends Authenticatable implements JWTSubject
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'created_at' => 'datetime:Y-m-d H:i:s',
-            'updated_at' => 'datetime:Y-m-d H:i:s',
+            'created_at' => 'datetime:d/m/Y à\s H:i:s',
+            'updated_at' => 'datetime:d/m/Y à\s H:i:s',
             'deleted_at' => 'datetime:Y-m-d H:i:s',
             'cpf' => 'App\Casts\CpfMask', // Cast CPF with mask
             'phone' => 'App\Casts\PhoneMask', // Cast phone with mask
