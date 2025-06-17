@@ -17,8 +17,8 @@ class IdentifyTenant
      */
     public function handle(Request $request, Closure $next): Response
     {
-        Tenant::findByDomain($request->getHost()); // Este método encontrará a empresa com base no domínio do host solicitado.
-
+        $tenant = Tenant::findByDomain($request->getHost()); // Este método encontrará a empresa com base no domínio do host solicitado.
+        
         // Se a empresa não for encontrada, você pode lidar com isso adequadamente, por exemplo, lançar uma exceção ou retornar uma resposta.
         // Exemplo: Se você quiser abortar com um 404 se a empresa não for encontrado.
         $currentTenant = Tenant::current();
